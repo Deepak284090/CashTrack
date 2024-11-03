@@ -1,15 +1,19 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 from datetime import datetime
 from earnings import EarningsManager
 from spendings import SpendingsManager
+from expense_analysis import ExpenseAnalysis
+from auth import Auth
+from PIL import Image, ImageTk
 
 
 class UserPage:
-    def __init__(self, root, username, on_logout):
+    def __init__(self, root, username, on_logout, auth_instance):
         self.root = root
         self.username = username
         self.on_logout = on_logout
+        self.auth = auth_instance  # Store the Auth instance
         self.show_user_home()
 
     def show_user_home(self):
@@ -51,15 +55,17 @@ class UserPage:
         self.show_spendings_list()
 
     def show_default_content(self):
-        tk.Label(self.right_frame, text="You have xxx amount left this month", font=("Arial", 10)).pack(pady=5)
-        tk.Label(self.right_frame, text="You can spend: xxx", font=("Arial", 10)).pack(pady=5)
+        self.clear_content(self.right_frame)
+
+        # Calculate the monthly balance
+        monthly_balance = ExpenseAnalysis.calculate_monthly_balance(self.username)
+        tk.Label(self.right_frame, text=f"Your monthly balance: ${monthly_balance:.2f}", font=("Arial", 10)).pack(
+            pady=5)
 
     def show_spendings_list(self):
-        # Clear the left frame
         for widget in self.left_frame.winfo_children():
             widget.destroy()
 
-        # Load and display spendings for the current user
         tk.Label(self.left_frame, text="Your Spendings:", bg="lightgray", font=("Arial", 10, "bold")).pack(anchor="w",
                                                                                                            padx=10,
                                                                                                            pady=5)
@@ -90,13 +96,20 @@ class UserPage:
         date_entry.insert(0, today)  # Set default date to today
         date_entry.pack()
 
+        # Checkbox for recurring earning
+        recurring_var = tk.BooleanVar()
+        tk.Checkbutton(self.right_frame, text="Recurring Monthly", variable=recurring_var).pack()
+
         def save_earning():
             try:
                 amount = float(amount_entry.get())
                 description = description_entry.get()
                 date = date_entry.get()  # Get date from entry field
-                EarningsManager.add_earning(self.username, amount, date, description)
+                recurring = recurring_var.get()  # Check if recurring checkbox is selected
+                EarningsManager.add_earning(self.username, amount, description, date, recurring)
                 tk.Label(self.right_frame, text="Earning Added!").pack()
+
+                # Clear entries
                 amount_entry.delete(0, tk.END)
                 description_entry.delete(0, tk.END)
                 date_entry.delete(0, tk.END)
@@ -112,7 +125,7 @@ class UserPage:
         # Current date
         today = datetime.now().strftime("%Y-%m-%d")
 
-        # Collect spending details
+        # Collect expense details
         tk.Label(self.right_frame, text="Amount").pack()
         amount_entry = tk.Entry(self.right_frame)
         amount_entry.pack()
@@ -121,43 +134,114 @@ class UserPage:
         description_entry = tk.Entry(self.right_frame)
         description_entry.pack()
 
-        tk.Label(self.right_frame, text="Category").pack()
-        category_entry = tk.Entry(self.right_frame)
-        category_entry.pack()
-
         tk.Label(self.right_frame, text="Date (YYYY-MM-DD)").pack()
         date_entry = tk.Entry(self.right_frame)
         date_entry.insert(0, today)  # Set default date to today
         date_entry.pack()
 
-        def save_spending():
+        tk.Label(self.right_frame, text="Category").pack()
+        category_entry = tk.Entry(self.right_frame)
+        category_entry.pack()
+
+        def save_expense():
             try:
                 amount = float(amount_entry.get())
                 description = description_entry.get()
-                category = category_entry.get()
                 date = date_entry.get()  # Get date from entry field
-                SpendingsManager.add_spending(self.username, amount, description, category, date)
-                tk.Label(self.right_frame, text="Spending Added!").pack()
+                category = category_entry.get()  # Get category from entry field
+
+                # Validate date format
+                datetime.strptime(date, "%Y-%m-%d")  # Will raise ValueError if format is incorrect
+
+                # Check if the expense exceeds the limit
+                expense_limit = self.auth.get_expense_limit(self.username)
+                if expense_limit is not None and amount > expense_limit:
+                    messagebox.showwarning("Expense Limit Exceeded",
+                                           f"You are exceeding your expense limit of ${expense_limit:.2f}.")
+
+                # Save the spending with a validated date and category
+                SpendingsManager.add_spending(self.username, amount, description, date, category)
+                tk.Label(self.right_frame, text="Expense Added!").pack()
+
+                # Clear entries
                 amount_entry.delete(0, tk.END)
                 description_entry.delete(0, tk.END)
-                category_entry.delete(0, tk.END)
                 date_entry.delete(0, tk.END)
+                category_entry.delete(0, tk.END)
                 date_entry.insert(0, today)  # Reset date to today's date
-                self.show_spendings_list()  # Refresh spendings list on the left
-            except ValueError:
-                messagebox.showerror("Input Error", "Please enter a valid amount.")
 
-        tk.Button(self.right_frame, text="Save Spending", command=save_spending).pack()
+            except ValueError as e:
+                if "time data" in str(e):
+                    messagebox.showerror("Input Error", "Please enter a valid date (YYYY-MM-DD).")
+                else:
+                    messagebox.showerror("Input Error", "Please enter valid values.")
+
+        tk.Button(self.right_frame, text="Save Expense", command=save_expense).pack()
 
     def analyze_expense(self):
         self.clear_content(self.right_frame)
-        tk.Label(self.right_frame, text="Analyze Expense functionality goes here.", font=("Arial", 12)).pack()
 
+        # Title and period selection setup
+        tk.Label(self.right_frame, text="Analyze Expenses", font=("Arial", 12, "bold")).pack(pady=5)
+
+        period_options = ["Monthly", "Quarterly", "Annually"]
+        period_var = tk.StringVar(value="Monthly")
+        period_dropdown = ttk.Combobox(self.right_frame, textvariable=period_var, values=period_options,
+                                       state="readonly")
+        period_dropdown.pack(pady=5)
+
+        def show_analysis():
+            period = period_var.get()
+            # Generate and display the chart
+            chart_path = ExpenseAnalysis.generate_expense_chart(self.username, period)
+            self.display_chart(chart_path)
+
+        tk.Button(self.right_frame, text="Show Analysis", command=show_analysis).pack(pady=10)
+
+    def display_chart(self, chart_path):
+        # Calculate the total amount spent this month
+        monthly_spent = ExpenseAnalysis.get_monthly_spending(self.username)
+
+        # Create a new Toplevel window for the chart
+        chart_window = tk.Toplevel(self.root)
+        chart_window.title("Expense Analysis Chart")
+
+        # Set the size of the new window if needed
+        chart_window.geometry("600x500")
+
+        # Display the amount spent this month at the top
+        tk.Label(chart_window, text=f"Amount Spent This Month: ${monthly_spent:.2f}", font=("Arial", 12, "bold")).pack(
+            pady=10)
+
+        # Load and display the chart image
+        chart_image = Image.open(chart_path)
+        chart_photo = ImageTk.PhotoImage(chart_image)
+
+        # Add the image to the new window
+        chart_label = tk.Label(chart_window, image=chart_photo)
+        chart_label.image = chart_photo  # Store a reference to avoid garbage collection
+        chart_label.pack()
+
+        # Optional: Add a close button
+        tk.Button(chart_window, text="Close", command=chart_window.destroy).pack(pady=10)
     def set_expense_limit(self):
         self.clear_content(self.right_frame)
-        tk.Label(self.right_frame, text="Set Expense Limit functionality goes here.", font=("Arial", 12)).pack()
 
-    def clear_content(self, frame=None):
-        target_frame = frame if frame else self.right_frame
-        for widget in target_frame.winfo_children():
+        tk.Label(self.right_frame, text="Set your Expense Limit:").pack()
+        limit_entry = tk.Entry(self.right_frame)
+        limit_entry.pack()
+
+        def save_limit():
+            try:
+                limit = float(limit_entry.get())
+                self.auth.set_expense_limit(self.username, limit)
+                tk.Label(self.right_frame, text=f"Expense limit set to: ${limit:.2f}").pack()
+                limit_entry.delete(0, tk.END)  # Clear entry
+            except ValueError:
+                messagebox.showerror("Input Error", "Please enter a valid limit.")
+
+        tk.Button(self.right_frame, text="Save Limit", command=save_limit).pack()
+
+    def clear_content(self, frame):
+        for widget in frame.winfo_children():
             widget.destroy()

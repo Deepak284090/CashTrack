@@ -7,10 +7,11 @@ import os
 CREDENTIALS_FILE = "credentials.json"
 
 class AdminPage:
-    def __init__(self, root, on_logout):
+    def __init__(self, root,username, on_logout):
         self.root = root
         self.on_logout = on_logout
         self.show_admin_home()
+        self.username = username
 
     def show_admin_home(self):
         # Clear any existing widgets

@@ -11,6 +11,30 @@
             "description": "c   c",
             "date": "2024-11-02",
             "category": " c "
+        },
+        {
+            "amount": 100.0,
+            "description": "pizza ",
+            "date": "2024-11-03",
+            "category": "food"
+        },
+        {
+            "amount": 200.0,
+            "description": "jacket",
+            "date": "2024-11-03",
+            "category": "clothes"
+        },
+        {
+            "amount": 5000.0,
+            "description": "took loan",
+            "date": "2024-11-03",
+            "category": "loan"
+        },
+        {
+            "amount": 1000.0,
+            "description": "bolwing",
+            "date": "2024-11-03",
+            "category": "fun"
         }
     ]
 }

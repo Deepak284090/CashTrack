@@ -19,6 +19,22 @@ class Auth:
         else:
             return {}
 
+    def save_credentials(self):
+        with open(CREDENTIALS_FILE, "w") as file:
+            json.dump(self.credentials, file, indent=4)
+
+    def set_expense_limit(self, username, limit):
+        # Set the expense limit for the user
+        if username in self.credentials:
+            self.credentials[username]["expense_limit"] = limit
+            self.save_credentials()  # Save updated credentials back to the file
+        else:
+            raise ValueError("User does not exist.")
+
+    def get_expense_limit(self, username):
+        # Return the expense limit for the user
+        return self.credentials.get(username, {}).get("expense_limit")
+
     def show_login_screen(self):
         for widget in self.root.winfo_children():
             widget.destroy()
