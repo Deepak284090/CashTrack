@@ -1,0 +1,16 @@
+{
+    "u1": [
+        {
+            "amount": 100.0,
+            "description": "d",
+            "date": "2024-11-02",
+            "category": "c "
+        },
+        {
+            "amount": 520.0,
+            "description": "c   c",
+            "date": "2024-11-02",
+            "category": " c "
+        }
+    ]
+}
