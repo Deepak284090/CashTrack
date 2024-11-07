@@ -1,17 +1,23 @@
-import tkinter as tk
 from tkinter import messagebox
+
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
+from datetime import datetime
+
+from earnings import EarningsManager
+from spendings import SpendingsManager
 import json
 import os
 
-
 CREDENTIALS_FILE = "credentials.json"
 
+
 class AdminPage:
-    def __init__(self, root,username, on_logout):
+    def __init__(self, root, username, on_logout):
         self.root = root
+        self.username = username
         self.on_logout = on_logout
         self.show_admin_home()
-        self.username = username
 
     def show_admin_home(self):
         # Clear any existing widgets
@@ -19,73 +25,196 @@ class AdminPage:
             widget.destroy()
 
         # Create a navigation bar at the top
-        nav_frame = tk.Frame(self.root, bg="lightgray")
+        nav_frame = ttk.Frame(self.root, bootstyle="secondary")
         nav_frame.pack(side="top", fill="x")
 
         # Add navigation buttons to the navigation bar
-        tk.Button(nav_frame, text="Add User", command=self.add_user).pack(side="left", padx=10, pady=5)
-        tk.Button(nav_frame, text="Set Admin", command=self.set_admin).pack(side="left", padx=10, pady=5)
-        tk.Button(nav_frame, text="Track Expense", command=self.track_expense).pack(side="left", padx=10, pady=5)
-        tk.Button(nav_frame, text="Update User Details", command=self.update_user).pack(side="left", padx=10, pady=5)
+        ttk.Button(nav_frame, text="Add User", command=self.add_user, bootstyle=PRIMARY).pack(side="left", padx=10,
+                                                                                              pady=5)
+        ttk.Button(nav_frame, text="Monthly Bills", command=self.bills, bootstyle=INFO).pack(side="left", padx=10,
+                                                                                             pady=5)
+        ttk.Button(nav_frame, text="Track Expense", command=self.track_expense, bootstyle=SUCCESS).pack(side="left",
+                                                                                                        padx=10, pady=5)
+        ttk.Button(nav_frame, text="Track Earnings", command=self.track_earnings, bootstyle=SUCCESS).pack(side="left",
+                                                                                                          padx=10,
+                                                                                                          pady=5)
+        ttk.Button(nav_frame, text="Logout", command=self.on_logout, bootstyle=DANGER).pack(side="right", padx=10,
+                                                                                            pady=5)
 
-        tk.Button(nav_frame, text="Logout", command=self.on_logout).pack(side="right", padx=10, pady=5)
+        # Welcome message frame
+        welcome_frame = ttk.Frame(self.root)
+        welcome_frame.pack(fill="x", pady=5)
+        welcome_message = f"Welcome, Admin {self.username}"
+        ttk.Label(welcome_frame, text=welcome_message, font=("Arial", 12), anchor="center").pack()
 
-        self.content_frame = tk.Frame(self.root)
-        self.content_frame.pack(fill="both", expand=True, pady=20)
+        # Main content area below the welcome message, divided into left and right frames
+        self.content_frame = ttk.Frame(self.root)
+        self.content_frame.pack(fill="both", expand=True, pady=10)
 
+        # Left frame for total user-wise expense list
+        self.left_frame = ttk.Frame(self.content_frame, width=200, bootstyle="secondary")
+        self.left_frame.pack(side="left", fill="y")
+
+        # Right frame for dynamic content
+        self.right_frame = ttk.Frame(self.content_frame, bootstyle="light")
+        self.right_frame.pack(side="right", fill="both", expand=True)
+
+        # Show user-wise expense list on the left frame and default content on the right
+        self.show_user_expense_list()
         self.show_default_content()
 
+    def show_user_expense_list(self):
+        # Clear any existing widgets in the left frame
+        for widget in self.left_frame.winfo_children():
+            widget.destroy()
+
+        # Title for the expense list
+        ttk.Label(self.left_frame, text="User-wise Expenses:", bootstyle="secondary-inverse",
+                  font=("Arial", 10, "bold")).pack(anchor="w", padx=10, pady=5)
+
+        # Get current month and year for filtering
+        current_month = datetime.now().month
+        current_year = datetime.now().year
+
+        all_spendings = SpendingsManager.get_all_spendings()
+        for user, spendings in all_spendings.items():
+            if user != 'admin':  # Skip the admin user
+                # Filter out the spending entries that are for the current month and year
+                monthly_spendings = [
+                    entry for entry in spendings if datetime.strptime(entry['date'], "%Y-%m-%d").month == current_month
+                                                    and datetime.strptime(entry['date'],
+                                                                          "%Y-%m-%d").year == current_year
+                ]
+
+                # Only display users with spendings for the current month
+                if monthly_spendings:
+                    total_expense = sum(entry['amount'] for entry in monthly_spendings)
+                    ttk.Label(self.left_frame,
+                              text=f"{user}: Total Expense for {current_month}/{current_year}: {total_expense}",
+                              font=("Arial", 10, "bold")).pack(anchor="w", padx=10, pady=2)
+
+
     def show_default_content(self):
-        tk.Label(self.content_frame, text="Welcome to CashTrack", font=("Arial", 14)).pack(pady=5)
-        tk.Label(self.content_frame, text="A solution to money management needs of a nuclear family.",
-                 font=("Arial", 10)).pack(pady=5)
+        self.clear_content(self.right_frame)
+        ttk.Label(self.right_frame, text="Welcome to Admin Panel", font=("Arial", 12, "bold")).pack(pady=10)
 
     def add_user(self):
-        self.clear_content()
+        self.clear_content(self.right_frame)
+        ttk.Label(self.right_frame, text="Add User", font=("Arial", 12, "bold")).pack(pady=10)
 
-        tk.Label(self.content_frame, text="Add or Update User", font=("Arial", 12)).pack(pady=10)
-
-        tk.Label(self.content_frame, text="Username").pack()
-        username_entry = tk.Entry(self.content_frame)
+        ttk.Label(self.right_frame, text="Username").pack()
+        username_entry = ttk.Entry(self.right_frame)
         username_entry.pack()
 
-        tk.Label(self.content_frame, text="Password").pack()
-        password_entry = tk.Entry(self.content_frame, show="*")
+        ttk.Label(self.right_frame, text="Password").pack()
+        password_entry = ttk.Entry(self.right_frame, show="*")
         password_entry.pack()
 
-        tk.Label(self.content_frame, text="Role (admin/user)").pack()
-        role_entry = tk.Entry(self.content_frame)
-        role_entry.pack()
+        is_admin_var = ttk.BooleanVar()
+        ttk.Checkbutton(self.right_frame, text="Admin", variable=is_admin_var).pack()
 
-        tk.Button(self.content_frame, text="Save User",
-                  command=lambda: self.save_user(username_entry.get(), password_entry.get(), role_entry.get())).pack(
-            pady=10)
+        def save_user():
+            username = username_entry.get()
+            password = password_entry.get()
+            is_admin = is_admin_var.get()
 
-    def save_user(self, username, password, role):
-        credentials = self.load_credentials()
+            if username and password:
+                credentials = self.load_credentials()
+                credentials[username] = {"password": password, "is_admin": is_admin}
+                self.save_credentials(credentials)
+                ttk.Label(self.right_frame, text="User added successfully!", bootstyle="success").pack(pady=5)
+                self.show_user_expenses_list()  # Refresh user list on left frame
+                username_entry.delete(0, ttk.END)
+                password_entry.delete(0, ttk.END)
+            else:
+                messagebox.showerror("Input Error", "Username and password cannot be empty.")
 
-        if role not in ["admin", "user"]:
-            tk.messagebox.showerror("Error", "Role must be 'admin' or 'user'")
-            return
-        credentials[username] = {
-            "password": password,
-            "role": role
-        }
+        ttk.Button(self.right_frame, text="Save User", command=save_user, bootstyle=SUCCESS).pack(pady=10)
 
-        self.save_credentials(credentials)
-        tk.messagebox.showinfo("Success", f"User '{username}' added/updated successfully.")
+    def bills(self):
+        self.clear_content(self.right_frame)
 
-    def set_admin(self):
-        self.clear_content()
-        tk.Label(self.content_frame, text="Set Admin functionality goes here.", font=("Arial", 12)).pack()
+        ttk.Label(self.right_frame, text="Add Monthly Bill", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(self.right_frame, text="Bill Name").pack()
+        bill_name_entry = ttk.Entry(self.right_frame)
+        bill_name_entry.pack()
+
+        ttk.Label(self.right_frame, text="Amount").pack()
+        amount_entry = ttk.Entry(self.right_frame)
+        amount_entry.pack()
+
+        def distribute_bill():
+            try:
+                amount = float(amount_entry.get())
+                bill_name = bill_name_entry.get()
+
+                credentials = self.load_credentials()
+                user_list = [
+                    user for user, data in credentials.items() if not data["is_admin"]
+                ]
+
+                user_checkbuttons = {}
+                for user in user_list:
+                    var = ttk.BooleanVar()
+                    ttk.Checkbutton(self.right_frame, text=user, variable=var).pack(anchor="w")
+                    user_checkbuttons[user] = var
+
+                def confirm_distribution():
+                    selected_users = [user for user, var in user_checkbuttons.items() if var.get()]
+                    if selected_users:
+                        split_amount = amount / len(selected_users)
+                        for user in selected_users:
+                            SpendingsManager.add_spending(user, split_amount, f"Monthly Bill: {bill_name}",
+                                                          datetime.now().strftime("%Y-%m-%d"), "Bills")
+                        ttk.Label(self.right_frame, text="Bill distributed successfully!", bootstyle="success").pack(
+                            pady=5)
+                        self.show_user_expenses_list()  # Refresh user list on left frame
+
+                ttk.Button(self.right_frame, text="Confirm Distribution", command=confirm_distribution,
+                           bootstyle=SUCCESS).pack(pady=10)
+
+            except ValueError:
+                messagebox.showerror("Input Error", "Please enter a valid amount.")
+
+        ttk.Button(self.right_frame, text="Distribute Bill", command=distribute_bill, bootstyle=INFO).pack(pady=10)
 
     def track_expense(self):
-        self.clear_content()
-        tk.Label(self.content_frame, text="Track Expense functionality goes here.", font=("Arial", 12)).pack()
+        self.clear_content(self.right_frame)
+        ttk.Label(self.right_frame, text="Track Expense", font=("Arial", 12, "bold")).pack(pady=10)
 
-    def update_user(self):
-        self.clear_content()
-        tk.Label(self.content_frame, text="Update User Details functionality goes here.", font=("Arial", 12)).pack()
+        def show_user_expenses(username):
+            expenses = SpendingsManager.get_user_spendings(username)
+            ttk.Label(self.right_frame, text=f"Expenses for {username}", font=("Arial", 10, "bold")).pack(anchor="w",
+                                                                                                          pady=5)
+            for entry in expenses:
+                expense_text = f"Amount: {entry['amount']}, Date: {entry['date']}, Category: {entry['category']}"
+                ttk.Label(self.right_frame, text=expense_text, anchor="w").pack(fill="x", padx=10, pady=2)
+
+        credentials = self.load_credentials()
+        for user in credentials:
+            ttk.Button(self.right_frame, text=user, command=lambda u=user: show_user_expenses(u),
+                       bootstyle=SECONDARY).pack(anchor="w", padx=10, pady=5)
+
+    def track_earnings(self):
+        self.clear_content(self.right_frame)
+        ttk.Label(self.right_frame, text="Track Earnings", font=("Arial", 12, "bold")).pack(pady=10)
+
+        def show_user_earnings(username):
+            earnings = EarningsManager.get_user_earnings(username)
+            ttk.Label(self.right_frame, text=f"Earnings for {username}", font=("Arial", 10, "bold")).pack(anchor="w",
+                                                                                                          pady=5)
+            for entry in earnings:
+                earning_text = f"Amount: {entry['amount']}, Date: {entry['date']}, Description: {entry['description']}"
+                ttk.Label(self.right_frame, text=earning_text, anchor="w").pack(fill="x", padx=10, pady=2)
+
+        credentials = self.load_credentials()
+        for user in credentials:
+            ttk.Button(self.right_frame, text=user, command=lambda u=user: show_user_earnings(u),
+                       bootstyle=SECONDARY).pack(anchor="w", padx=10, pady=5)
+
+    def clear_content(self, frame):
+        for widget in frame.winfo_children():
+            widget.destroy()
 
     def load_credentials(self):
         if os.path.exists(CREDENTIALS_FILE):
@@ -97,8 +226,3 @@ class AdminPage:
     def save_credentials(self, credentials):
         with open(CREDENTIALS_FILE, "w") as file:
             json.dump(credentials, file, indent=4)
-
-    def clear_content(self):
-        # Clear the content frame before loading new content
-        for widget in self.content_frame.winfo_children():
-            widget.destroy()

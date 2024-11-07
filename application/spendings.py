@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from tkinter import messagebox
 
 SPENDINGS_FILE = "spendings.json"
 
@@ -70,3 +71,21 @@ class SpendingsManager:
             return user_data.get("limit", None)
         except (FileNotFoundError, json.JSONDecodeError):
             return None
+
+    def submit_monthly_bill(self, bill_name, total_amount, selected_users):
+        try:
+            amount_per_user = float(total_amount) / sum(var.get() for var in selected_users.values())
+        except ZeroDivisionError:
+            messagebox.showerror("Error", "No users selected.")
+            return
+
+        for user, var in selected_users.items():
+            if var.get():  # If user is selected
+                SpendingsManager.add_spending(
+                    username=user,
+                    amount=amount_per_user,
+                    description=bill_name,
+                    date=f"{datetime.now().year}-{datetime.now().month:02d}-01",
+                    category="Monthly Bill"
+                )
+        messagebox.showinfo("Success", "Monthly bill distributed successfully.")

@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import ttk
 import json
 import os
 
@@ -24,42 +25,45 @@ class Auth:
             json.dump(self.credentials, file, indent=4)
 
     def set_expense_limit(self, username, limit):
-        # Set the expense limit for the user
         if username in self.credentials:
             self.credentials[username]["expense_limit"] = limit
-            self.save_credentials()  # Save updated credentials back to the file
+            self.save_credentials()
         else:
             raise ValueError("User does not exist.")
 
     def get_expense_limit(self, username):
-        # Return the expense limit for the user
         return self.credentials.get(username, {}).get("expense_limit")
 
     def show_login_screen(self):
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        login_frame = tk.Frame(self.root)
+        login_frame = ttk.Frame(self.root, padding=20)
         login_frame.pack(pady=20)
 
-        tk.Label(login_frame, text="Welcome to Cash Track", font=("Arial", 14)).pack(pady=10)
+        # Title label
+        title_label = ttk.Label(login_frame, text="Welcome to Cash Track", font=("Arial", 16, "bold"))
+        title_label.pack(pady=(0, 15))
 
-        # Radio buttons for selecting Admin or User
+        # User role selection with radio buttons
         self.user_role = tk.StringVar(value="user")
-        role_frame = tk.Frame(login_frame)
-        role_frame.pack(pady=5)
-        tk.Radiobutton(role_frame, text="Admin", variable=self.user_role, value="admin").grid(row=0, column=0, padx=5)
-        tk.Radiobutton(role_frame, text="User", variable=self.user_role, value="user").grid(row=0, column=1, padx=5)
+        role_frame = ttk.Frame(login_frame)
+        role_frame.pack(pady=10)
+        ttk.Radiobutton(role_frame, text="Admin", variable=self.user_role, value="admin").grid(row=0, column=0, padx=5)
+        ttk.Radiobutton(role_frame, text="User", variable=self.user_role, value="user").grid(row=0, column=1, padx=5)
 
-        tk.Label(login_frame, text="User Name").pack(pady=5)
-        self.username_entry = tk.Entry(login_frame)
-        self.username_entry.pack()
+        # Username and password entry fields
+        ttk.Label(login_frame, text="Username:", font=("Arial", 10)).pack(anchor="w", pady=(10, 2))
+        self.username_entry = ttk.Entry(login_frame, width=25)
+        self.username_entry.pack(pady=(0, 5))
 
-        tk.Label(login_frame, text="Password").pack(pady=5)
-        self.password_entry = tk.Entry(login_frame, show="*")
-        self.password_entry.pack()
+        ttk.Label(login_frame, text="Password:", font=("Arial", 10)).pack(anchor="w", pady=(10, 2))
+        self.password_entry = ttk.Entry(login_frame, show="*", width=25)
+        self.password_entry.pack(pady=(0, 5))
 
-        tk.Button(login_frame, text="Login", command=self.login).pack(pady=10)
+        # Login button
+        login_button = ttk.Button(login_frame, text="Login", command=self.login, style="Accent.TButton")
+        login_button.pack(pady=15)
 
     def login(self):
         username = self.username_entry.get()
@@ -68,9 +72,9 @@ class Auth:
         if username in self.credentials:
             if self.credentials[username]["password"] == password:
                 if self.credentials[username]["role"] == "admin" and self.user_role.get() == "admin":
-                    self.on_admin_login(username)  # Pass the username to admin login
+                    self.on_admin_login(username)
                 elif self.credentials[username]["role"] == "user" and self.user_role.get() == "user":
-                    self.on_user_login(username)  # Pass the username to user login
+                    self.on_user_login(username)
                 else:
                     messagebox.showerror("Login Failed", "Incorrect role selected.")
             else:

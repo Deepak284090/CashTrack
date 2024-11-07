@@ -8,7 +8,7 @@ class CashTrackApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Cash Track")
-        self.root.geometry("550x300")
+        self.root.geometry("600x350")
 
         self.auth = Auth(self.root, self.show_admin_home, self.show_user_home)
         self.auth.show_login_screen()

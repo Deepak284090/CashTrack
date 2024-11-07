@@ -1,12 +1,13 @@
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
 from datetime import datetime
 from spendings import SpendingsManager
 from earnings import EarningsManager
+from ttkbootstrap import Style
 
 class ExpenseAnalysis:
     @staticmethod
     def analyze_expenses(username, period):
-
         expenses = SpendingsManager.get_user_spendings(username)
         report = {}
 
@@ -38,23 +39,35 @@ class ExpenseAnalysis:
 
     @staticmethod
     def generate_expense_chart(username, period):
+        # Get the current style's colors
+        style = Style()
+        primary_color = style.colors.primary
+        secondary_color = style.colors.secondary
+
+        # Set matplotlib style parameters to match ttkbootstrap theme
+        rcParams['axes.labelcolor'] = primary_color
+        rcParams['xtick.color'] = primary_color
+        rcParams['ytick.color'] = primary_color
+        rcParams['text.color'] = secondary_color
+        rcParams['axes.titleweight'] = 'bold'
+
         # Analyze expenses for the given period
         report = ExpenseAnalysis.analyze_expenses(username, period)
 
         categories = list(report["category_totals"].keys())
         amounts = list(report["category_totals"].values())
 
-        # Generate the bar chart
+        # Generate the bar chart with ttkbootstrap color scheme
         plt.figure(figsize=(6, 4))
-        plt.bar(categories, amounts, color='skyblue')
-        plt.xlabel("Categories")
-        plt.ylabel("Amount Spent ($)")
-        plt.title(f"{period} Expense Breakdown for {username}")
+        plt.bar(categories, amounts, color=style.colors.info)
+        plt.xlabel("Categories", fontsize=10)
+        plt.ylabel("Amount Spent ($)", fontsize=10)
+        plt.title(f"{period} Expense Breakdown for {username}", fontsize=12)
 
         # Save the plot as an image
         chart_path = "expense_chart.png"
         plt.tight_layout()
-        plt.savefig(chart_path)
+        plt.savefig(chart_path, dpi=100, facecolor=style.colors.bg)
         plt.close()
 
         return chart_path
