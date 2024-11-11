@@ -50,6 +50,8 @@ Git is used for version control, ensuring efficient tracking of changes and coll
 JSON files are used for storing user data, earnings, expenses, and other settings. This simple, file-based approach eliminates the need for a complex database system.
 
 ## Project Design
+![image](https://github.com/user-attachments/assets/42d00155-8b14-469e-a024-2a33e0014ab2)
+
 
 ### Core Components:
 
