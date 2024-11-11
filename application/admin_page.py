@@ -27,29 +27,43 @@ class AdminPage:
         nav_frame.pack(side="top", fill="x")
 
         # Add navigation buttons to the navigation bar
-        ttk.Button(nav_frame, text="Add User", command=self.add_user, bootstyle=PRIMARY).pack(side="left", padx=10,
-                                                                                              pady=5)
-        ttk.Button(nav_frame, text="Monthly Bills", command=self.bills, bootstyle=INFO).pack(side="left", padx=10,
-                                                                                             pady=5)
-        ttk.Button(nav_frame, text="Track Expense", command=self.track_expense, bootstyle=SUCCESS).pack(side="left",
-                                                                                                        padx=10, pady=5)
-        ttk.Button(nav_frame, text="Track Earnings", command=self.track_earnings, bootstyle=SUCCESS).pack(side="left",
-                                                                                                          padx=10,
-                                                                                                          pady=5)
-        ttk.Button(nav_frame, text="Logout", command=self.on_logout, bootstyle=DANGER).pack(side="right", padx=10,
-                                                                                            pady=5)
+        ttk.Button(
+            nav_frame, text="Add User", command=self.add_user, bootstyle=PRIMARY
+        ).pack(side="left", padx=10, pady=5)
+        ttk.Button(
+            nav_frame, text="Monthly Bills", command=self.bills, bootstyle=INFO
+        ).pack(side="left", padx=10, pady=5)
+        ttk.Button(
+            nav_frame,
+            text="Track Expense",
+            command=self.track_expense,
+            bootstyle=SUCCESS,
+        ).pack(side="left", padx=10, pady=5)
+        ttk.Button(
+            nav_frame,
+            text="Track Earnings",
+            command=self.track_earnings,
+            bootstyle=SUCCESS,
+        ).pack(side="left", padx=10, pady=5)
+        ttk.Button(
+            nav_frame, text="Logout", command=self.on_logout, bootstyle=DANGER
+        ).pack(side="right", padx=10, pady=5)
 
         # Welcome message frame
         welcome_frame = ttk.Frame(self.root)
         welcome_frame.pack(fill="x", pady=5)
         welcome_message = f"Welcome to CashTrack, {self.username}"
-        ttk.Label(welcome_frame, text=welcome_message, font=("Arial", 12), anchor="center").pack()
+        ttk.Label(
+            welcome_frame, text=welcome_message, font=("Arial", 12), anchor="center"
+        ).pack()
 
         self.content_frame = ttk.Frame(self.root)
         self.content_frame.pack(fill="both", expand=True, pady=10)
 
         # Left frame for total user-wise expense list
-        self.left_frame = ttk.Frame(self.content_frame, width=200, bootstyle="secondary")
+        self.left_frame = ttk.Frame(
+            self.content_frame, width=200, bootstyle="secondary"
+        )
         self.left_frame.pack(side="left", fill="both", expand=True)
 
         # Right frame for dynamic content
@@ -65,8 +79,12 @@ class AdminPage:
             widget.destroy()
 
         # Title for the expense list
-        ttk.Label(self.left_frame, text="User-wise Expenses:", bootstyle="secondary-inverse",
-                  font=("Arial", 10, "bold")).pack(anchor="w", padx=10, pady=5)
+        ttk.Label(
+            self.left_frame,
+            text="User-wise Expenses:",
+            bootstyle="secondary-inverse",
+            font=("Arial", 10, "bold"),
+        ).pack(anchor="w", padx=10, pady=5)
 
         # Get current month and year for filtering
         current_month = datetime.now().month
@@ -74,29 +92,37 @@ class AdminPage:
 
         all_spendings = SpendingsManager.get_all_spendings()
         for user, spendings in all_spendings.items():
-            if user != 'admin':  # Skip the admin user
+            if user != "admin":  # Skip the admin user
                 # Filter out the spending entries that are for the current month and year
                 monthly_spendings = [
-                    entry for entry in spendings if datetime.strptime(entry['date'], "%Y-%m-%d").month == current_month
-                                                    and datetime.strptime(entry['date'],
-                                                                          "%Y-%m-%d").year == current_year
+                    entry
+                    for entry in spendings
+                    if datetime.strptime(entry["date"], "%Y-%m-%d").month
+                    == current_month
+                    and datetime.strptime(entry["date"], "%Y-%m-%d").year
+                    == current_year
                 ]
 
                 # Only display users with spendings for the current month
                 if monthly_spendings:
-                    total_expense = sum(entry['amount'] for entry in monthly_spendings)
-                    ttk.Label(self.left_frame,
-                              text=f"{user}: Total Expense for {current_month}/{current_year}: {total_expense}",
-                              font=("Arial", 10, "bold")).pack(anchor="w", padx=10, pady=2)
-
+                    total_expense = sum(entry["amount"] for entry in monthly_spendings)
+                    ttk.Label(
+                        self.left_frame,
+                        text=f"{user}: Total Expense for {current_month}/{current_year}: {total_expense}",
+                        font=("Arial", 10, "bold"),
+                    ).pack(anchor="w", padx=10, pady=2)
 
     def show_default_content(self):
         self.clear_content(self.right_frame)
-        ttk.Label(self.right_frame, text="Welcome to Admin Panel", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(
+            self.right_frame, text="Welcome to Admin Panel", font=("Arial", 12, "bold")
+        ).pack(pady=10)
 
     def add_user(self):
         self.clear_content(self.right_frame)
-        ttk.Label(self.right_frame, text="Add User", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(self.right_frame, text="Add User", font=("Arial", 12, "bold")).pack(
+            pady=10
+        )
 
         ttk.Label(self.right_frame, text="Username").pack()
         username_entry = ttk.Entry(self.right_frame)
@@ -106,7 +132,6 @@ class AdminPage:
         password_entry = ttk.Entry(self.right_frame, show="*")
         password_entry.pack()
 
-
         def on_toggle():
             if role.get():
                 role.set("admin")
@@ -114,10 +139,15 @@ class AdminPage:
                 role.set("user")
 
         role = ttk.StringVar(value="user")
-        checkbutton = ttk.Checkbutton(self.right_frame, text="admin", variable=role, onvalue="admin", offvalue="user",
-                                      command=on_toggle)
+        checkbutton = ttk.Checkbutton(
+            self.right_frame,
+            text="admin",
+            variable=role,
+            onvalue="admin",
+            offvalue="user",
+            command=on_toggle,
+        )
         checkbutton.pack()
-
 
         def save_user():
             username = username_entry.get()
@@ -126,21 +156,35 @@ class AdminPage:
 
             if username and password:
                 credentials = self.load_credentials()
-                credentials[username] = {"password": password, "role": is_admin, "expense_limit" : 0.0}
+                credentials[username] = {
+                    "password": password,
+                    "role": is_admin,
+                    "expense_limit": 0.0,
+                }
                 self.save_credentials(credentials)
-                ttk.Label(self.right_frame, text="User added successfully!", bootstyle="success").pack(pady=5)
+                ttk.Label(
+                    self.right_frame,
+                    text="User added successfully!",
+                    bootstyle="success",
+                ).pack(pady=5)
                 self.show_user_expense_list()  # Refresh user list on left frame
                 username_entry.delete(0, ttk.END)
                 password_entry.delete(0, ttk.END)
             else:
-                messagebox.showerror("Input Error", "Username and password cannot be empty.")
+                messagebox.showerror(
+                    "Input Error", "Username and password cannot be empty."
+                )
 
-        ttk.Button(self.right_frame, text="Save User", command=save_user, bootstyle=SUCCESS).pack(pady=10)
+        ttk.Button(
+            self.right_frame, text="Save User", command=save_user, bootstyle=SUCCESS
+        ).pack(pady=10)
 
     def bills(self):
         self.clear_content(self.right_frame)
 
-        ttk.Label(self.right_frame, text="Add Monthly Bill", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(
+            self.right_frame, text="Add Monthly Bill", font=("Arial", 12, "bold")
+        ).pack(pady=10)
         ttk.Label(self.right_frame, text="Bill Name").pack()
         bill_name_entry = ttk.Entry(self.right_frame)
         bill_name_entry.pack()
@@ -162,31 +206,54 @@ class AdminPage:
                 user_checkbuttons = {}
                 for user in user_list:
                     var = ttk.BooleanVar()
-                    ttk.Checkbutton(self.right_frame, text=user, variable=var).pack(anchor="w")
+                    ttk.Checkbutton(self.right_frame, text=user, variable=var).pack(
+                        anchor="w"
+                    )
                     user_checkbuttons[user] = var
 
                 def confirm_distribution():
-                    selected_users = [user for user, var in user_checkbuttons.items() if var.get()]
+                    selected_users = [
+                        user for user, var in user_checkbuttons.items() if var.get()
+                    ]
                     if selected_users:
                         split_amount = amount / len(selected_users)
                         for user in selected_users:
-                            SpendingsManager.add_spending(user, split_amount, f"Monthly Bill: {bill_name}",
-                                                          datetime.now().strftime("%Y-%m-%d"), "Bills")
-                        ttk.Label(self.right_frame, text="Bill distributed successfully!", bootstyle="success").pack(
-                            pady=5)
+                            SpendingsManager.add_spending(
+                                user,
+                                split_amount,
+                                f"Monthly Bill: {bill_name}",
+                                datetime.now().strftime("%Y-%m-%d"),
+                                "Bills",
+                            )
+                        ttk.Label(
+                            self.right_frame,
+                            text="Bill distributed successfully!",
+                            bootstyle="success",
+                        ).pack(pady=5)
                         self.show_user_expense_list()  # Refresh user list on left frame
 
-                ttk.Button(self.right_frame, text="Confirm Distribution", command=confirm_distribution,
-                           bootstyle=SUCCESS).pack(pady=10)
+                ttk.Button(
+                    self.right_frame,
+                    text="Confirm Distribution",
+                    command=confirm_distribution,
+                    bootstyle=SUCCESS,
+                ).pack(pady=10)
 
             except ValueError:
                 messagebox.showerror("Input Error", "Please enter a valid amount.")
 
-        ttk.Button(self.right_frame, text="Distribute Bill", command=distribute_bill, bootstyle=INFO).pack(pady=10)
+        ttk.Button(
+            self.right_frame,
+            text="Distribute Bill",
+            command=distribute_bill,
+            bootstyle=INFO,
+        ).pack(pady=10)
 
     def track_expense(self):
         self.clear_content(self.right_frame)
-        ttk.Label(self.right_frame, text="Track Expense", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(
+            self.right_frame, text="Track Expense", font=("Arial", 12, "bold")
+        ).pack(pady=10)
 
         def show_user_expenses(username):
             # Create a new window for displaying expenses
@@ -196,7 +263,9 @@ class AdminPage:
 
             # Add a Canvas and Scrollbar for scrolling capability
             canvas = ttk.Canvas(expense_window)
-            scroll_y = ttk.Scrollbar(expense_window, orient="vertical", command=canvas.yview)
+            scroll_y = ttk.Scrollbar(
+                expense_window, orient="vertical", command=canvas.yview
+            )
 
             # Frame inside the Canvas for holding the list of expenses
             frame = ttk.Frame(canvas)
@@ -207,10 +276,14 @@ class AdminPage:
 
             # Populate expenses in the frame
             expenses = SpendingsManager.get_user_spendings(username)
-            ttk.Label(frame, text=f"Expenses for {username}", font=("Arial", 10, "bold")).pack(anchor="w", pady=5)
+            ttk.Label(
+                frame, text=f"Expenses for {username}", font=("Arial", 10, "bold")
+            ).pack(anchor="w", pady=5)
             for entry in expenses:
                 expense_text = f"Amount: {entry['amount']}, Date: {entry['date']}, Category: {entry['category']}"
-                ttk.Label(frame, text=expense_text, anchor="w").pack(fill="x", padx=10, pady=2)
+                ttk.Label(frame, text=expense_text, anchor="w").pack(
+                    fill="x", padx=10, pady=2
+                )
 
             # Pack Canvas and Scrollbar
             canvas.pack(side="left", fill="both", expand=True)
@@ -227,12 +300,14 @@ class AdminPage:
                     self.right_frame,
                     text=user,
                     command=lambda u=user: show_user_expenses(u),
-                    bootstyle="info-outline"
+                    bootstyle="info-outline",
                 ).pack(anchor="center", padx=10, pady=5)
 
     def track_earnings(self):
         self.clear_content(self.right_frame)
-        ttk.Label(self.right_frame, text="Track Earnings", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(
+            self.right_frame, text="Track Earnings", font=("Arial", 12, "bold")
+        ).pack(pady=10)
 
         def show_user_earnings(username):
             # Create a new window for displaying earnings
@@ -242,7 +317,9 @@ class AdminPage:
 
             # Add a Canvas and Scrollbar for scrolling capability
             canvas = ttk.Canvas(earnings_window)
-            scroll_y = ttk.Scrollbar(earnings_window, orient="vertical", command=canvas.yview)
+            scroll_y = ttk.Scrollbar(
+                earnings_window, orient="vertical", command=canvas.yview
+            )
 
             # Frame inside the Canvas for holding the list of earnings
             frame = ttk.Frame(canvas)
@@ -253,10 +330,14 @@ class AdminPage:
 
             # Populate earnings in the frame
             earnings = EarningsManager.get_user_earnings(username)
-            ttk.Label(frame, text=f"Earnings for {username}", font=("Arial", 10, "bold")).pack(anchor="w", pady=5)
+            ttk.Label(
+                frame, text=f"Earnings for {username}", font=("Arial", 10, "bold")
+            ).pack(anchor="w", pady=5)
             for entry in earnings:
                 earning_text = f"Amount: {entry['amount']}, Date: {entry['date']}, Description: {entry['description']}"
-                ttk.Label(frame, text=earning_text, anchor="w").pack(fill="x", padx=10, pady=2)
+                ttk.Label(frame, text=earning_text, anchor="w").pack(
+                    fill="x", padx=10, pady=2
+                )
 
             # Pack Canvas and Scrollbar
             canvas.pack(side="left", fill="both", expand=True)
@@ -273,7 +354,7 @@ class AdminPage:
                     self.right_frame,
                     text=user,
                     command=lambda u=user: show_user_earnings(u),
-                    bootstyle="info-outline"
+                    bootstyle="info-outline",
                 ).pack(anchor="center", padx=10, pady=5)
 
     def clear_content(self, frame):
@@ -290,5 +371,3 @@ class AdminPage:
     def save_credentials(self, credentials):
         with open(CREDENTIALS_FILE, "w") as file:
             json.dump(credentials, file, indent=4)
-
-

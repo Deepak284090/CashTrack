@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 EARNINGS_FILE = "earnings.json"
 
+
 class EarningsManager:
     @staticmethod
     def add_earning(username, amount, description, date, recurring=False):
@@ -13,7 +14,12 @@ class EarningsManager:
             data = {}
 
         # Create entry with amount, date, description, and recurring flag
-        entry = {"amount": amount, "date": date, "description": description, "recurring": recurring}
+        entry = {
+            "amount": amount,
+            "date": date,
+            "description": description,
+            "recurring": recurring,
+        }
 
         # Append to user data
         user_data = data.get(username, [])
@@ -61,7 +67,9 @@ class EarningsManager:
                 if entry.get("recurring"):
                     entry_date = datetime.strptime(entry["date"], "%Y-%m-%d").date()
                     while entry_date < today:
-                        entry_date += timedelta(days=30)  # Advance by one month (approx.)
+                        entry_date += timedelta(
+                            days=30
+                        )  # Advance by one month (approx.)
 
                     # Add a new entry if due
                     if entry_date == today:

@@ -15,13 +15,13 @@ class CashTrackApp:
 
     def show_admin_home(self, username):
         self.clear_screen()
-        # Pass the root and username to AdminPage
         self.admin_page = AdminPage(self.root, username, self.show_login_screen)
 
     def show_user_home(self, username):
         self.clear_screen()
-        # Pass the root and username to UserPage
-        self.user_page = UserPage(self.root, username, self.show_login_screen,auth_instance=self.auth)
+        self.user_page = UserPage(
+            self.root, username, self.show_login_screen, auth_instance=self.auth
+        )
 
     def show_login_screen(self):
         self.clear_screen()

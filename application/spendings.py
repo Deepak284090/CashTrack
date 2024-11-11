@@ -4,6 +4,7 @@ from tkinter import messagebox
 
 SPENDINGS_FILE = "spendings.json"
 
+
 class SpendingsManager:
     @staticmethod
     def add_spending(username, amount, description, date, category):
@@ -18,7 +19,7 @@ class SpendingsManager:
             "amount": amount,
             "description": description,
             "date": date,
-            "category": category
+            "category": category,
         }
 
         # Append to user data
@@ -74,7 +75,9 @@ class SpendingsManager:
 
     def submit_monthly_bill(self, bill_name, total_amount, selected_users):
         try:
-            amount_per_user = float(total_amount) / sum(var.get() for var in selected_users.values())
+            amount_per_user = float(total_amount) / sum(
+                var.get() for var in selected_users.values()
+            )
         except ZeroDivisionError:
             messagebox.showerror("Error", "No users selected.")
             return
@@ -86,6 +89,6 @@ class SpendingsManager:
                     amount=amount_per_user,
                     description=bill_name,
                     date=f"{datetime.now().year}-{datetime.now().month:02d}-01",
-                    category="Monthly Bill"
+                    category="Monthly Bill",
                 )
         messagebox.showinfo("Success", "Monthly bill distributed successfully.")
