@@ -1,9 +1,7 @@
 from tkinter import messagebox
-
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from datetime import datetime
-
 from earnings import EarningsManager
 from spendings import SpendingsManager
 import json
@@ -44,16 +42,15 @@ class AdminPage:
         # Welcome message frame
         welcome_frame = ttk.Frame(self.root)
         welcome_frame.pack(fill="x", pady=5)
-        welcome_message = f"Welcome, Admin {self.username}"
+        welcome_message = f"Welcome to CashTrack, {self.username}"
         ttk.Label(welcome_frame, text=welcome_message, font=("Arial", 12), anchor="center").pack()
 
-        # Main content area below the welcome message, divided into left and right frames
         self.content_frame = ttk.Frame(self.root)
         self.content_frame.pack(fill="both", expand=True, pady=10)
 
         # Left frame for total user-wise expense list
         self.left_frame = ttk.Frame(self.content_frame, width=200, bootstyle="secondary")
-        self.left_frame.pack(side="left", fill="y")
+        self.left_frame.pack(side="left", fill="both", expand=True)
 
         # Right frame for dynamic content
         self.right_frame = ttk.Frame(self.content_frame, bootstyle="light")
@@ -64,7 +61,6 @@ class AdminPage:
         self.show_default_content()
 
     def show_user_expense_list(self):
-        # Clear any existing widgets in the left frame
         for widget in self.left_frame.winfo_children():
             widget.destroy()
 
@@ -110,20 +106,30 @@ class AdminPage:
         password_entry = ttk.Entry(self.right_frame, show="*")
         password_entry.pack()
 
-        is_admin_var = ttk.BooleanVar()
-        ttk.Checkbutton(self.right_frame, text="Admin", variable=is_admin_var).pack()
+
+        def on_toggle():
+            if role.get():
+                role.set("admin")
+            else:
+                role.set("user")
+
+        role = ttk.StringVar(value="user")
+        checkbutton = ttk.Checkbutton(self.right_frame, text="admin", variable=role, onvalue="admin", offvalue="user",
+                                      command=on_toggle)
+        checkbutton.pack()
+
 
         def save_user():
             username = username_entry.get()
             password = password_entry.get()
-            is_admin = is_admin_var.get()
+            is_admin = role.get()
 
             if username and password:
                 credentials = self.load_credentials()
-                credentials[username] = {"password": password, "is_admin": is_admin}
+                credentials[username] = {"password": password, "role": is_admin, "expense_limit" : 0.0}
                 self.save_credentials(credentials)
                 ttk.Label(self.right_frame, text="User added successfully!", bootstyle="success").pack(pady=5)
-                self.show_user_expenses_list()  # Refresh user list on left frame
+                self.show_user_expense_list()  # Refresh user list on left frame
                 username_entry.delete(0, ttk.END)
                 password_entry.delete(0, ttk.END)
             else:
@@ -168,7 +174,7 @@ class AdminPage:
                                                           datetime.now().strftime("%Y-%m-%d"), "Bills")
                         ttk.Label(self.right_frame, text="Bill distributed successfully!", bootstyle="success").pack(
                             pady=5)
-                        self.show_user_expenses_list()  # Refresh user list on left frame
+                        self.show_user_expense_list()  # Refresh user list on left frame
 
                 ttk.Button(self.right_frame, text="Confirm Distribution", command=confirm_distribution,
                            bootstyle=SUCCESS).pack(pady=10)
@@ -183,34 +189,92 @@ class AdminPage:
         ttk.Label(self.right_frame, text="Track Expense", font=("Arial", 12, "bold")).pack(pady=10)
 
         def show_user_expenses(username):
+            # Create a new window for displaying expenses
+            expense_window = ttk.Toplevel(self.right_frame)
+            expense_window.title(f"Expenses for {username}")
+            expense_window.geometry("400x300")
+
+            # Add a Canvas and Scrollbar for scrolling capability
+            canvas = ttk.Canvas(expense_window)
+            scroll_y = ttk.Scrollbar(expense_window, orient="vertical", command=canvas.yview)
+
+            # Frame inside the Canvas for holding the list of expenses
+            frame = ttk.Frame(canvas)
+
+            # Configure the Canvas
+            canvas.create_window((0, 0), window=frame, anchor="nw")
+            canvas.configure(yscrollcommand=scroll_y.set)
+
+            # Populate expenses in the frame
             expenses = SpendingsManager.get_user_spendings(username)
-            ttk.Label(self.right_frame, text=f"Expenses for {username}", font=("Arial", 10, "bold")).pack(anchor="w",
-                                                                                                          pady=5)
+            ttk.Label(frame, text=f"Expenses for {username}", font=("Arial", 10, "bold")).pack(anchor="w", pady=5)
             for entry in expenses:
                 expense_text = f"Amount: {entry['amount']}, Date: {entry['date']}, Category: {entry['category']}"
-                ttk.Label(self.right_frame, text=expense_text, anchor="w").pack(fill="x", padx=10, pady=2)
+                ttk.Label(frame, text=expense_text, anchor="w").pack(fill="x", padx=10, pady=2)
+
+            # Pack Canvas and Scrollbar
+            canvas.pack(side="left", fill="both", expand=True)
+            scroll_y.pack(side="right", fill="y")
+
+            # Update the scrollable region
+            frame.update_idletasks()
+            canvas.config(scrollregion=canvas.bbox("all"))
 
         credentials = self.load_credentials()
-        for user in credentials:
-            ttk.Button(self.right_frame, text=user, command=lambda u=user: show_user_expenses(u),
-                       bootstyle=SECONDARY).pack(anchor="w", padx=10, pady=5)
+        for user, info in credentials.items():
+            if info.get("role") == "user":
+                ttk.Button(
+                    self.right_frame,
+                    text=user,
+                    command=lambda u=user: show_user_expenses(u),
+                    bootstyle="info-outline"
+                ).pack(anchor="center", padx=10, pady=5)
 
     def track_earnings(self):
         self.clear_content(self.right_frame)
         ttk.Label(self.right_frame, text="Track Earnings", font=("Arial", 12, "bold")).pack(pady=10)
 
         def show_user_earnings(username):
+            # Create a new window for displaying earnings
+            earnings_window = ttk.Toplevel(self.right_frame)
+            earnings_window.title(f"Earnings for {username}")
+            earnings_window.geometry("400x300")
+
+            # Add a Canvas and Scrollbar for scrolling capability
+            canvas = ttk.Canvas(earnings_window)
+            scroll_y = ttk.Scrollbar(earnings_window, orient="vertical", command=canvas.yview)
+
+            # Frame inside the Canvas for holding the list of earnings
+            frame = ttk.Frame(canvas)
+
+            # Configure the Canvas
+            canvas.create_window((0, 0), window=frame, anchor="nw")
+            canvas.configure(yscrollcommand=scroll_y.set)
+
+            # Populate earnings in the frame
             earnings = EarningsManager.get_user_earnings(username)
-            ttk.Label(self.right_frame, text=f"Earnings for {username}", font=("Arial", 10, "bold")).pack(anchor="w",
-                                                                                                          pady=5)
+            ttk.Label(frame, text=f"Earnings for {username}", font=("Arial", 10, "bold")).pack(anchor="w", pady=5)
             for entry in earnings:
                 earning_text = f"Amount: {entry['amount']}, Date: {entry['date']}, Description: {entry['description']}"
-                ttk.Label(self.right_frame, text=earning_text, anchor="w").pack(fill="x", padx=10, pady=2)
+                ttk.Label(frame, text=earning_text, anchor="w").pack(fill="x", padx=10, pady=2)
+
+            # Pack Canvas and Scrollbar
+            canvas.pack(side="left", fill="both", expand=True)
+            scroll_y.pack(side="right", fill="y")
+
+            # Update the scrollable region
+            frame.update_idletasks()
+            canvas.config(scrollregion=canvas.bbox("all"))
 
         credentials = self.load_credentials()
-        for user in credentials:
-            ttk.Button(self.right_frame, text=user, command=lambda u=user: show_user_earnings(u),
-                       bootstyle=SECONDARY).pack(anchor="w", padx=10, pady=5)
+        for user, info in credentials.items():
+            if info.get("role") == "user":
+                ttk.Button(
+                    self.right_frame,
+                    text=user,
+                    command=lambda u=user: show_user_earnings(u),
+                    bootstyle="info-outline"
+                ).pack(anchor="center", padx=10, pady=5)
 
     def clear_content(self, frame):
         for widget in frame.winfo_children():
@@ -226,3 +290,5 @@ class AdminPage:
     def save_credentials(self, credentials):
         with open(CREDENTIALS_FILE, "w") as file:
             json.dump(credentials, file, indent=4)
+
+

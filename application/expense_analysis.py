@@ -73,16 +73,28 @@ class ExpenseAnalysis:
         return chart_path
 
     @staticmethod
-    def calculate_monthly_balance(username):
-        # Calculate total earnings and spendings for the current month
-        current_month = datetime.now().strftime("%Y-%m")
+    def calculate_balance(username, period):
+        now = datetime.now()
+
+        # Determine the start date based on the selected period
+        if period == "Monthly":
+            start_date = now.replace(day=1)
+        elif period == "Quarterly":
+            month = (now.month - 1) // 3 * 3 + 1
+            start_date = now.replace(month=month, day=1)
+        elif period == "Annually":
+            start_date = now.replace(month=1, day=1)
+        else:
+            raise ValueError("Invalid period selected.")
+
+        # Calculate total earnings and spendings from the start date
         total_earnings = sum(
             e["amount"] for e in EarningsManager.get_user_earnings(username)
-            if e["date"].startswith(current_month)
+            if datetime.strptime(e["date"], "%Y-%m-%d") >= start_date
         )
         total_spendings = sum(
             s["amount"] for s in SpendingsManager.get_user_spendings(username)
-            if s["date"].startswith(current_month)
+            if datetime.strptime(s["date"], "%Y-%m-%d") >= start_date
         )
         return total_earnings - total_spendings
 

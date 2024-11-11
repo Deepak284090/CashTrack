@@ -6,7 +6,6 @@ from datetime import datetime
 from earnings import EarningsManager
 from spendings import SpendingsManager
 from expense_analysis import ExpenseAnalysis
-from auth import Auth
 from PIL import Image, ImageTk
 
 
@@ -40,13 +39,12 @@ class UserPage:
         welcome_message = f"Welcome, {self.username}"
         ttk.Label(welcome_frame, text=welcome_message, font=("Arial", 12), anchor="center").pack()
 
-        # Main content area below the welcome message, divided into left and right frames
         self.content_frame = ttk.Frame(self.root)
         self.content_frame.pack(fill="both", expand=True, pady=10)
 
         # Left frame for spendings list
-        self.left_frame = ttk.Frame(self.content_frame, width=200, bootstyle="secondary")
-        self.left_frame.pack(side="left", fill="y")
+        self.left_frame = ttk.Frame(self.content_frame, bootstyle="info")
+        self.left_frame.pack(side="left", fill="both", expand=True)
 
         # Right frame for dynamic content
         self.right_frame = ttk.Frame(self.content_frame, bootstyle="light")
@@ -59,19 +57,19 @@ class UserPage:
         self.clear_content(self.right_frame)
 
         # Calculate the monthly balance
-        monthly_balance = ExpenseAnalysis.calculate_monthly_balance(self.username)
+        monthly_balance = ExpenseAnalysis.calculate_balance(self.username,"Monthly")
         ttk.Label(self.right_frame, text=f"Your monthly balance: ${monthly_balance:.2f}", font=("Arial", 10)).pack(pady=5)
 
     def show_spendings_list(self):
         for widget in self.left_frame.winfo_children():
             widget.destroy()
 
-        ttk.Label(self.left_frame, text="Your Spendings:", bootstyle="secondary-inverse", font=("Arial", 10, "bold")).pack(anchor="w", padx=10, pady=5)
+        ttk.Label(self.left_frame, text="Your Spendings:", bootstyle="info-inverse", font=("Arial", 10, "bold")).pack(anchor="w", padx=10, pady=5)
 
         spendings = SpendingsManager.get_user_spendings(self.username)
         for entry in spendings:
             spending_text = f"Amount: {entry['amount']}, Date: {entry['date']}, Category: {entry['category']}"
-            ttk.Label(self.left_frame, text=spending_text, bootstyle="secondary", anchor="w").pack(fill="x", padx=10, pady=2)
+            ttk.Label(self.left_frame, text=spending_text, bootstyle="info-inverse", anchor="w").pack(fill="x", padx=10, pady=2)
 
     # Functionality Methods
     def add_earning(self):
@@ -92,7 +90,7 @@ class UserPage:
         date_entry.pack()
 
         recurring_var = ttk.BooleanVar()
-        ttk.Checkbutton(self.right_frame, text="Recurring Monthly", variable=recurring_var).pack()
+        ttk.Checkbutton(self.right_frame, text="Recurring Monthly", variable=recurring_var).pack(pady = 5)
 
         def save_earning():
             try:
@@ -174,25 +172,35 @@ class UserPage:
         def show_analysis():
             period = period_var.get()
             chart_path = ExpenseAnalysis.generate_expense_chart(self.username, period)
-            self.display_chart(chart_path)
+            self.display_chart(chart_path,period)
 
-        ttk.Button(self.right_frame, text="Show Analysis", command=show_analysis, bootstyle=INFO).pack(pady=10)
+        ttk.Button(self.right_frame, text="Show Analysis", command=show_analysis, bootstyle=INFO).pack(pady=80)
 
-    def display_chart(self, chart_path):
-        monthly_spent = ExpenseAnalysis.get_monthly_spending(self.username)
+    def display_chart(self, chart_path, period):
+        total_savings = ExpenseAnalysis.calculate_balance(self.username, period)
+
         chart_window = ttk.Toplevel(self.root)
-        chart_window.title("Expense Analysis Chart")
+        chart_window.title(f"{period} Expense Analysis Chart")
         chart_window.geometry("600x500")
 
-        ttk.Label(chart_window, text=f"Amount Spent This Month: ${monthly_spent:.2f}", font=("Arial", 12, "bold")).pack(pady=10)
+        # Display the total savings for the period
+        ttk.Label(
+            chart_window,
+            text=f"Total Savings {period}: ${total_savings:.2f}",
+            font=("Arial", 12, "bold")
+        ).pack(pady=10)
 
-        chart_image = Image.open(chart_path)
-        chart_photo = ImageTk.PhotoImage(chart_image)
-        chart_label = ttk.Label(chart_window, image=chart_photo)
-        chart_label.image = chart_photo
-        chart_label.pack()
+        try:
+            chart_image = Image.open(chart_path)
+            chart_photo = ImageTk.PhotoImage(chart_image)
+            chart_label = ttk.Label(chart_window, image=chart_photo)
+            chart_label.image = chart_photo
+            chart_label.pack()
+        except Exception as e:
+            ttk.Label(chart_window, text="Error loading chart image.", font=("Arial", 10)).pack()
 
-        ttk.Button(chart_window, text="Close", command=chart_window.destroy, bootstyle=SECONDARY).pack(pady=10)
+        # Close button
+        ttk.Button(chart_window, text="Close", command=chart_window.destroy, bootstyle="secondary").pack(pady=10)
 
     def set_expense_limit(self):
         self.clear_content(self.right_frame)
@@ -209,7 +217,7 @@ class UserPage:
             except ValueError:
                 messagebox.showerror("Input Error", "Please enter a valid limit.")
 
-        ttk.Button(self.right_frame, text="Save Limit", command=save_limit, bootstyle=SUCCESS).pack
+        ttk.Button(self.right_frame, text="Save Limit", command=save_limit, bootstyle=SUCCESS).pack(pady=10)
 
 
     def clear_content(self, frame):
