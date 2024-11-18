@@ -142,6 +142,8 @@ class UserPage:
                 description_entry.delete(0, ttk.END)
                 date_entry.delete(0, ttk.END)
                 date_entry.insert(0, today)
+                self.show_spendings_list()
+                self.show_default_content()
             except ValueError:
                 messagebox.showerror("Input Error", "Please enter a valid amount.")
 
@@ -170,15 +172,15 @@ class UserPage:
         date_entry.pack()
 
         ttk.Label(self.right_frame, text="Category").pack()
-        category_entry = ttk.Entry(self.right_frame)
-        category_entry.pack()
+        category_combobox = ttk.Combobox(self.right_frame, values=["Food", "Clothes", "Transport", "Bills", "Entertainment", "Miscellanoues"])
+        category_combobox.pack()
 
         def save_expense():
             try:
                 amount = float(amount_entry.get())
                 description = description_entry.get()
                 date = date_entry.get()
-                category = category_entry.get()
+                category = category_combobox.get()
                 datetime.strptime(date, "%Y-%m-%d")
 
                 expense_limit = self.auth.get_expense_limit(self.username)
@@ -198,8 +200,10 @@ class UserPage:
                 amount_entry.delete(0, ttk.END)
                 description_entry.delete(0, ttk.END)
                 date_entry.delete(0, ttk.END)
-                category_entry.delete(0, ttk.END)
+                category_combobox.delete(0, ttk.END)
                 date_entry.insert(0, today)
+                self.show_spendings_list()
+                self.show_default_content()
             except ValueError as e:
                 if "time data" in str(e):
                     messagebox.showerror(

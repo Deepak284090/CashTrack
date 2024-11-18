@@ -1,5 +1,6 @@
 from tkinter import messagebox
 import ttkbootstrap as ttk
+from docutils.nodes import description
 from ttkbootstrap.constants import *
 from datetime import datetime
 from earnings import EarningsManager
@@ -185,6 +186,7 @@ class AdminPage:
         ttk.Label(
             self.right_frame, text="Add Monthly Bill", font=("Arial", 12, "bold")
         ).pack(pady=10)
+
         ttk.Label(self.right_frame, text="Bill Name").pack()
         bill_name_entry = ttk.Entry(self.right_frame)
         bill_name_entry.pack()
@@ -195,52 +197,78 @@ class AdminPage:
 
         def distribute_bill():
             try:
-                amount = float(amount_entry.get())
-                bill_name = bill_name_entry.get()
+                # Validate inputs
+                bill_name = bill_name_entry.get().strip()
+                if not bill_name:
+                    raise ValueError("Bill name cannot be empty.")
 
+                amount = float(amount_entry.get())
+                if amount <= 0:
+                    raise ValueError("Amount must be greater than zero.")
+
+                # Load users and create checkboxes
                 credentials = self.load_credentials()
                 user_list = [
-                    user for user, data in credentials.items() if not data["is_admin"]
+                    user for user, data in credentials.items() if data["role"] == "user"
                 ]
+
+                if not user_list:
+                    raise ValueError("No eligible users to distribute the bill.")
+
+                # Create a new Toplevel window
+                distribution_window = ttk.Toplevel(self.root)
+                distribution_window.title("Distribute Bill")
+                distribution_window.geometry("400x400")
+
+                # Add instructions and checkboxes to the new window
+                ttk.Label(
+                    distribution_window,
+                    text=f"Distribute '{bill_name}' (${amount}) among users:",
+                    font=("Arial", 10, "bold")
+                ).pack(pady=10)
 
                 user_checkbuttons = {}
                 for user in user_list:
-                    var = ttk.BooleanVar()
-                    ttk.Checkbutton(self.right_frame, text=user, variable=var).pack(
-                        anchor="w"
-                    )
-                    user_checkbuttons[user] = var
+                    user_var = ttk.BooleanVar()
+                    ttk.Checkbutton(
+                        distribution_window, text=user, variable=user_var
+                    ).pack(anchor="center", padx=10, pady=2)
+                    user_checkbuttons[user] = user_var
 
+                # Confirm distribution function
                 def confirm_distribution():
                     selected_users = [
                         user for user, var in user_checkbuttons.items() if var.get()
                     ]
-                    if selected_users:
-                        split_amount = amount / len(selected_users)
-                        for user in selected_users:
-                            SpendingsManager.add_spending(
-                                user,
-                                split_amount,
-                                f"Monthly Bill: {bill_name}",
-                                datetime.now().strftime("%Y-%m-%d"),
-                                "Bills",
-                            )
-                        ttk.Label(
-                            self.right_frame,
-                            text="Bill distributed successfully!",
-                            bootstyle="success",
-                        ).pack(pady=5)
-                        self.show_user_expense_list()  # Refresh user list on left frame
 
+                    if not selected_users:
+                        messagebox.showerror("Selection Error", "No users selected.")
+                        return
+
+                    split_amount = amount / len(selected_users)
+                    for user in selected_users:
+                        SpendingsManager.add_spending(
+                            user,
+                            split_amount,
+                            f"Monthly Bill: {bill_name}",
+                            datetime.now().strftime("%Y-%m-%d"),
+                            "Bills",
+                        )
+
+                    messagebox.showinfo("Success", "Bill distributed successfully!")
+                    distribution_window.destroy()  # Close the new window
+
+                # Confirm button in the new window
                 ttk.Button(
-                    self.right_frame,
+                    distribution_window,
                     text="Confirm Distribution",
                     command=confirm_distribution,
                     bootstyle=SUCCESS,
-                ).pack(pady=10)
+                ).pack(pady=20)
 
-            except ValueError:
-                messagebox.showerror("Input Error", "Please enter a valid amount.")
+            except ValueError as e:
+                messagebox.showerror("Input Error", str(e))
+
 
         ttk.Button(
             self.right_frame,
@@ -280,7 +308,7 @@ class AdminPage:
                 frame, text=f"Expenses for {username}", font=("Arial", 10, "bold")
             ).pack(anchor="w", pady=5)
             for entry in expenses:
-                expense_text = f"Amount: {entry['amount']}, Date: {entry['date']}, Category: {entry['category']}"
+                expense_text = f"Amount: {entry['amount']}, Date: {entry['date']}, Category: {entry['category']},\ndescription: {entry['description']}"
                 ttk.Label(frame, text=expense_text, anchor="w").pack(
                     fill="x", padx=10, pady=2
                 )
@@ -371,3 +399,5 @@ class AdminPage:
     def save_credentials(self, credentials):
         with open(CREDENTIALS_FILE, "w") as file:
             json.dump(credentials, file, indent=4)
+
+
