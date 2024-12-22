@@ -4,7 +4,7 @@ Cash Track is a comprehensive financial management application designed for nucl
 
 ## Introduction
 
-In today’s fast-paced world, managing household finances can be challenging, especially for nuclear families with several income sources. Cash Track helps address common pain points by providing an automated system to track earnings, expenses, and financial transactions. It ensures that all family members contribute fairly to shared expenses, and allows for transparent and real-time financial management.
+In today’s fast-paced world, managing household finances can be challenging, especially for joint families with several income sources. Cash Track helps address common pain points by providing an automated system to track earnings, expenses, and financial transactions. It ensures that all family members contribute fairly to shared expenses, and allows for transparent and real-time financial management.
 
 ## Objectives
 
@@ -27,14 +27,6 @@ The primary focus of this project is on nuclear families with multiple earners. 
 
 ### Exclusions:
 The project focuses solely on household financial management, excluding advanced features like investment tracking, tax filing, or complex budgeting.
-
-## Application Tools
-
-### Programming Language: Python
-Python is used for its readability, ease of use, and strong support for libraries related to data management, GUI creation, and visualization.
-
-### IDE: PyCharm
-PyCharm is used as the primary IDE, providing features such as intelligent code completion, error checking, and version control integration.
 
 ### Libraries and Packages:
 - **Tkinter**: For creating the graphical user interface.
